@@ -3,3 +3,14 @@
 *.pyc
 .vscode
 __pycache__
+data/
+demo/
+Experiments/
+NeRF_Blender_Models/
+R2L_Blender_Models/
+Results/
+.idea/
+ray_dir_scatters_dataposes_vs_videoposes_blender.fig.pickle
+ray_dir_scatters_dataposes_vs_videoposes_blender.pdf
+ray_origin_scatters_dataposes_vs_videoposes_blender.fig.pickle
+ray_origin_scatters_dataposes_vs_videoposes_blender.pdf

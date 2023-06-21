@@ -6,7 +6,7 @@
   <meta name="description" content="R2L">
   <meta name="keywords" content="Neural Light Field, distillation">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>R2L: Distilling Neural Radiance Field to Neural Light Field for Efficient Novel View Synthesis</title>
+  <title>Depth Light Field Training (DeLFT)</title>
   <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
 
   <link rel="stylesheet" href="./static/css/bulma.min.css">
@@ -35,7 +35,7 @@
     </div>
     <div class="navbar-menu">
       <div class="navbar-start" style="flex-grow: 1; justify-content: center;">
-        <a class="navbar-item" href="https://github.com/snap-research/R2L">
+        <a class="navbar-item" href="https://github.com/MihneaToader/SilhouetteNeRF">
           <span class="icon">
             <i class="fas fa-home"></i>
           </span>
@@ -52,38 +52,24 @@
       <div class="container is-max-desktop">
         <div class="columns is-centered">
           <div class="column has-text-centered">
-            <h1 class="title is-1 publication-title">R2L: Distilling Neural Radiance Field to Neural Light Field for
-              Efficient Novel View Synthesis</h1>
+            <h1 class="title is-1 publication-title">Depth Light Field Training (DeLFT)</h1>
             <div class="is-size-5 publication-authors">
               <span class="author-block">
-                <a href="http://huanwang.tech">Huan Wang</a><sup>1,2,*</sup>,</span>
-              <span class="author-block">
-                <a href="https://alanspike.github.io">Jian Ren</a><sup>1</sup>,</span>
-              <span class="author-block">
-                <a href="https://zeng.science">Zeng Huang</a><sup>1</sup>,
-              </span>
-              <span class="author-block">
-                <a href="https://kyleolsz.github.io">Kyle Olszewski</a><sup>1</sup>,
-              </span>
-              <span class="author-block">
-                <a href="https://mlchai.com">Menglei Chai</a><sup>1</sup>,
-              </span>
-              <span class="author-block">
-                <a href="http://www1.ece.neu.edu/~yunfu/">Yun Fu</a><sup>2</sup>,
-              </span>
-              <span class="author-block">
-                <a href="http://www.stulyakov.com">Sergey Tulyakov</a><sup>1</sup>
-              </span>
+                Mihnea Toader<sup>1</sup>,</span>
             </div>
-            <h1 style="font-size:23px;font-weight:bold">ECCV 2022</h1>
-
             <div class="is-size-5 publication-authors">
-              <span class="author-block"><sup>1</sup>Snap Inc.,</span>
-              <span class="author-block"><sup>2</sup>Northeastern University</span>
+              Supervisors:
+              <span class="author-block">
+                Elmar Eisemann<sup>1</sup>,</span>
+              <span class="author-block">
+                Petr Kellnhofer<sup>1</sup>,</span>
+              <span class="author-block">
+                Michael Weinmann<sup>1</sup></span>
+              </span>
             </div>
 
             <div class="is-size-5 publication-authors">
-              <span class="author-block">(<sup>*</sup>Work done when Huan was an intern at Snap)</span>
+              <span class="author-block"><sup>1</sup>EEMCS, Delft University of Technology, The Netherlands</span>
             </div>
 
             <div class="column has-text-centered">
@@ -98,22 +84,24 @@
                     <span>Paper</span>
                   </a>
                 </span>
-                <span class="link-block">
-                  <a href="https://arxiv.org/abs/2203.17261" class="external-link button is-normal is-rounded is-dark">
-                    <span class="icon">
-                      <i class="ai ai-arxiv"></i>
-                    </span>
-                    <span>arXiv</span>
-                  </a>
-                </span>
                 <!-- Code Link. -->
                 <span class="link-block">
-                  <a href="https://github.com/snap-research/R2L"
+                  <a href="https://github.com/MihneaToader/SilhouetteNeRF"
                     class="external-link button is-normal is-rounded is-dark">
                     <span class="icon">
                       <i class="fab fa-github"></i>
                     </span>
                     <span>Code</span>
+                  </a>
+                </span>
+                <!-- Data Link. -->
+                <span class="link-block">
+                  <a href="https://github.com/snap-research/R2L"
+                    class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="fa fa-database"></i>
+                    </span>
+                    <span>Data</span>
                   </a>
                 </span>
               </div>
@@ -128,12 +116,10 @@
   <section class="hero teaser">
     <div class="container is-max-desktop">
       <div class="hero-body">
-        <div align="center"> <img src="static/images/frontpage.png" width="750px"> </div>
         <div class="content has-text-centered">
-          We present R2L, a deep (88-layer) residual MLP network that can represent the neural light field (NeLF) of
-          complex synthetic and real-world scenes. It is featured by compact representation size (~20MB storage size),
-          fast rendering speed (~30x speedup than NeRF), significantly improved visual quality (1.4dB boost than NeRF),
-          with no whistles and bells (no special data structure or parallelism required).
+          <video class="video-fluid w-100" controls autoplay loop muted>
+            <source src="static/videos/NeRF/blender_chair.mp4" type="video/mp4" />
+          </video>
         </div>
       </div>
     </div>
@@ -146,19 +132,12 @@
         <div class="column is-four-fifths">
           <h2 class="title is-3">Abstract</h2>
           <div class="content has-text-justified">
-            Recent research explosion on Neural Radiance Field (NeRF) shows the encouraging potential to represent
-            complex scenes with neural networks. One major drawback of NeRF is its prohibitive inference time: Rendering
-            a single pixel requires querying the NeRF network hundreds of times. To resolve it, existing efforts mainly
-            attempt to reduce the number of required sampled points. However, the problem of iterative sampling still
-            exists. On the other hand, Neural Light Field (NeLF) presents a more straightforward representation over
-            NeRF in novel view synthesis -- the rendering of a pixel amounts to one single forward pass without
-            ray-marching. In this work, we present a deep residual MLP network (88 layers) to effectively learn the
-            light field. We show the key to successfully learning such a deep NeLF network is to have sufficient data,
-            for which we transfer the knowledge from a pre-trained NeRF model via data distillation. Extensive
-            experiments on both synthetic and real-world scenes show the merits of our method over other counterpart
-            algorithms. On the synthetic scenes, we achieve 26-35x FLOPs reduction (per camera ray) and 28-31x runtime
-            speedup, meanwhile delivering significantly better (1.4-2.8 dB average PSNR improvement) rendering quality
-            than NeRF without any customized implementation tricks.
+            Neural radiance fields (NeRF) based solutions for novel view synthesis can achieve state of the art results.
+            Recent work proposes models that take less time to render, need less training data or take up less space.
+            However, few papers explore the use of NeRFs in classic rendering scenarios such as rasterization, which
+            could contribute to wider adoption. Our paper proposes a deep MLP network with fast evaluation times, that
+            generates view-dependent shadow maps. The network distills the knowledge of an existing NeRF model and
+            achieves the speedup through the use of neural light fields, by only doing one network forward per ray.
           </div>
         </div>
       </div>
@@ -284,67 +263,21 @@
           </div>
 
 
-          <!-- DONeRF results -->
-          <h2 class="title is-3">2. Visual Comparison on DONeRF Synthetic Dataset</h2>
-          <p>(You may pause the video to see the difference between NeRF and ours)</p>
-
-          <div class="content has-text-centered">
-            <video class="video-fluid w-100" controls autoplay loop muted>
-              <source src="static/videos/DONeRF/sanmiguel.mp4" type="video/mp4" />
-            </video>
-            <p>Scene: Sanmiguel (Blender). Left: NeRF (PSNR: 28.96), Right: Ours (PSNR: 31.37)</p>
-          </div>
-
-          <div class="content has-text-centered">
-            <video class="video-fluid w-100" controls autoplay loop muted>
-              <source src="static/videos/DONeRF/pavillon.mp4" type="video/mp4" />
-            </video>
-            <p>Scene: Pavillon (Blender). Left: NeRF (PSNR: 32.82), Right: Ours (PSNR: 34.10)</p>
-          </div>
-
-          <div class="content has-text-centered">
-            <video class="video-fluid w-100" controls autoplay loop muted>
-              <source src="static/videos/DONeRF/classroom.mp4" type="video/mp4" />
-            </video>
-            <p>Scene: Classroom (Blender). Left: NeRF (PSNR: 35.33), Right: Ours (PSNR: 38.96)</p>
-          </div>
-
-          <div class="content has-text-centered">
-            <video class="video-fluid w-100" controls autoplay loop muted>
-              <source src="static/videos/DONeRF/bulldozer.mp4" type="video/mp4" />
-            </video>
-            <p>Scene: Bulldozer (Blender). Left: NeRF (PSNR: 36.85), Right: Ours (PSNR: 38.01)</p>
-          </div>
-
-          <div class="content has-text-centered">
-            <video class="video-fluid w-100" controls autoplay loop muted>
-              <source src="static/videos/DONeRF/forest.mp4" type="video/mp4" />
-            </video>
-            <p>Scene: Forest (Blender). Left: NeRF (PSNR: 28.11), Right: Ours (PSNR: 34.18)</p>
-          </div>
-
-          <div class="content has-text-centered">
-            <video class="video-fluid w-100" controls autoplay loop muted>
-              <source src="static/videos/DONeRF/barbershop.mp4" type="video/mp4" />
-            </video>
-            <p>Scene: Barbershop (Blender). Left: NeRF (PSNR: 33.92), Right: Ours (PSNR: 36.05)</p>
-          </div>
-
         </div>
       </div>
     </div>
   </section>
 
-  <section class="section" id="BibTeX">
-    <div class="container is-max-desktop content">
-      <h2 class="title">BibTeX</h2>
-      <pre><code>@inproceedings{wang2022r2l,
-  title={R2L: Distilling Neural Radiance Field to Neural Light Field for Efficient Novel View Synthesis},
-  author={Wang, Huan and Ren, Jian and Huang, Zeng and Olszewski, Kyle and Chai, Menglei and Fu, Yun and Tulyakov, Sergey},
-  booktitle={European Conference on Computer Vision},
-  year={2022}</code></pre>
-    </div>
-  </section>
+<!--  <section class="section" id="BibTeX">-->
+<!--    <div class="container is-max-desktop content">-->
+<!--      <h2 class="title">BibTeX</h2>-->
+<!--      <pre><code>@inproceedings{wang2022r2l,-->
+<!--  title={R2L: Distilling Neural Radiance Field to Neural Light Field for Efficient Novel View Synthesis},-->
+<!--  author={Wang, Huan and Ren, Jian and Huang, Zeng and Olszewski, Kyle and Chai, Menglei and Fu, Yun and Tulyakov, Sergey},-->
+<!--  booktitle={European Conference on Computer Vision},-->
+<!--  year={2022}</code></pre>-->
+<!--    </div>-->
+<!--  </section>-->
 
 
   <footer class="footer">
