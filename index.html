@@ -3,8 +3,8 @@
 
 <head>
   <meta charset="utf-8">
-  <meta name="description" content="R2L">
-  <meta name="keywords" content="Neural Light Field, distillation">
+  <meta name="description" content="DeLFT">
+  <meta name="keywords" content="depth maps, Neural Light Field, distillation">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Depth Light Field Training (DeLFT)</title>
   <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
@@ -35,7 +35,7 @@
     </div>
     <div class="navbar-menu">
       <div class="navbar-start" style="flex-grow: 1; justify-content: center;">
-        <a class="navbar-item" href="https://github.com/MihneaToader/SilhouetteNeRF">
+        <a class="navbar-item" href="https://github.com/MihneaToader/Depth-Light-Field-Training/">
           <span class="icon">
             <i class="fas fa-home"></i>
           </span>
@@ -76,7 +76,7 @@
               <div class="publication-links">
                 <!-- PDF Link. -->
                 <span class="link-block">
-                  <a href="https://arxiv.org/pdf/2203.17261.pdf"
+                  <a href="https://github.com/MihneaToader/Depth-Light-Field-Training/"
                     class="external-link button is-normal is-rounded is-dark">
                     <span class="icon">
                       <i class="fas fa-file-pdf"></i>
@@ -86,7 +86,7 @@
                 </span>
                 <!-- Code Link. -->
                 <span class="link-block">
-                  <a href="https://github.com/MihneaToader/SilhouetteNeRF"
+                  <a href="https://github.com/MihneaToader/Depth-Light-Field-Training/"
                     class="external-link button is-normal is-rounded is-dark">
                     <span class="icon">
                       <i class="fab fa-github"></i>
@@ -96,7 +96,7 @@
                 </span>
                 <!-- Data Link. -->
                 <span class="link-block">
-                  <a href="https://github.com/snap-research/R2L"
+                  <a href="https://github.com/MihneaToader/Depth-Light-Field-Training/releases/tag/data"
                     class="external-link button is-normal is-rounded is-dark">
                     <span class="icon">
                       <i class="fa fa-database"></i>
@@ -152,133 +152,39 @@
         <div class="column is-full-width">
 
           <!-- NeRF results: Blender -->
-          <h2 class="title is-3">1. Visual Comparison on NeRF Synthetic and Realistic Datasets</h2>
-          <p>(You may pause the video to review the difference between NeRF and ours)</p>
-
+          <h2 class="title is-3">Visual Comparison on the NeRF dataset</h2>
           <div class="content has-text-centered">
             <video class="video-fluid w-100" controls autoplay loop muted>
-              <source src="static/videos/NeRF/blender_chair.mp4" type="video/mp4" />
+              <source src="static/videos/DeLFT/lego_delft.mp4" type="video/mp4" />
             </video>
-            <p>Scene: Chair (Blender). Left: NeRF (PSNR: 33.90), Right: Ours (PSNR: 36.71)</p>
+            <p>Scene: Lego (Blender).</p>
           </div>
 
           <div class="content has-text-centered">
             <video class="video-fluid w-100" controls autoplay loop muted>
-              <source src="static/videos/NeRF/blender_drums.mp4" type="video/mp4" />
+              <source src="static/videos/DeLFT/chair_delft.mp4" type="video/mp4" />
             </video>
-            <p>Scene: Drums (Blender). Left: NeRF (PSNR: 25.56), Right: Ours (PSNR: 26.03)</p>
+            <p>Scene: Chair (Blender).</p>
           </div>
 
           <div class="content has-text-centered">
-            <video class="video-fluid w-100" controls autoplay loop muted>
-              <source src="static/videos/NeRF/blender_ficus.mp4" type="video/mp4" />
+            <video class="video-fluid w-100 slow" controls autoplay loop muted>
+              <source src="static/videos/DeLFT/fern_slow.mp4" type="video/mp4" />
             </video>
-            <p>Scene: Ficus (Blender). Left: NeRF (PSNR: 28.88), Right: Ours (PSNR: 28.63)</p>
+            <p>Scene: Fern (LLFF).</p>
           </div>
 
           <div class="content has-text-centered">
-            <video class="video-fluid w-100" controls autoplay loop muted>
-              <source src="static/videos/NeRF/blender_hotdog.mp4" type="video/mp4" />
+            <video class="video-fluid w-100 slow" controls autoplay loop muted>
+              <source src="static/videos/DeLFT/horns_slow.mp4" type="video/mp4" />
             </video>
-            <p>Scene: Hotdog (Blender). Left: NeRF (PSNR: 34.64), Right: Ours (PSNR: 38.07)</p>
+            <p>Scene: Horns (LLFF).</p>
           </div>
-
-          <div class="content has-text-centered">
-            <video class="video-fluid w-100" controls autoplay loop muted>
-              <source src="static/videos/NeRF/blender_lego.mp4" type="video/mp4" />
-            </video>
-            <p>Scene: Lego (Blender). Left: NeRF (PSNR: 31.42), Right: Ours (PSNR: 32.53)</p>
-          </div>
-
-          <div class="content has-text-centered">
-            <video class="video-fluid w-100" controls autoplay loop muted>
-              <source src="static/videos/NeRF/blender_materials.mp4" type="video/mp4" />
-            </video>
-            <p>Scene: Materials (Blender). Left: NeRF (PSNR: 29.22), Right: Ours (PSNR: 30.20)</p>
-          </div>
-
-          <div class="content has-text-centered">
-            <video class="video-fluid w-100" controls autoplay loop muted>
-              <source src="static/videos/NeRF/blender_mic.mp4" type="video/mp4" />
-            </video>
-            <p>Scene: Mic (Blender). Left: NeRF (PSNR: 30.84), Right: Ours (PSNR: 32.80)</p>
-          </div>
-
-          <div class="content has-text-centered">
-            <video class="video-fluid w-100" controls autoplay loop muted>
-              <source src="static/videos/NeRF/blender_ship.mp4" type="video/mp4" />
-            </video>
-            <p>Scene: Ship (Blender). Left: NeRF (PSNR: 29.30), Right: Ours (PSNR: 29.98)</p>
-          </div>
-
-
-          <!-- NeRF results: LLFF -->
-          <div class="content has-text-centered">
-            <video class="video-fluid w-100" controls autoplay loop muted>
-              <source src="static/videos/NeRF/llff_room.mp4" type="video/mp4" />
-            </video>
-            <p>Scene: Room (LLFF). Left: NeRF (PSNR: 33.07), Right: Ours (PSNR: 33.30)</p>
-          </div>
-
-          <div class="content has-text-centered">
-            <video class="video-fluid w-100" controls autoplay loop muted>
-              <source src="static/videos/NeRF/llff_fern.mp4" type="video/mp4" />
-            </video>
-            <p>Scene: Fern (LLFF). Left: NeRF (PSNR: 26.86), Right: Ours (PSNR: 26.87)</p>
-          </div>
-
-          <div class="content has-text-centered">
-            <video class="video-fluid w-100" controls autoplay loop muted>
-              <source src="static/videos/NeRF/llff_leaves.mp4" type="video/mp4" />
-            </video>
-            <p>Scene: Leaves (LLFF). Left: NeRF (PSNR: 22.40), Right: Ours (PSNR: 22.71)</p>
-          </div>
-
-          <div class="content has-text-centered">
-            <video class="video-fluid w-100" controls autoplay loop muted>
-              <source src="static/videos/NeRF/llff_orchids.mp4" type="video/mp4" />
-            </video>
-            <p>Scene: Orchids (LLFF). Left: NeRF (PSNR: 21.29), Right: Ours (PSNR: 21.01)</p>
-          </div>
-
-          <div class="content has-text-centered">
-            <video class="video-fluid w-100" controls autoplay loop muted>
-              <source src="static/videos/NeRF/llff_flower.mp4" type="video/mp4" />
-            </video>
-            <p>Scene: Flower (LLFF). Left: NeRF (PSNR: 28.22), Right: Ours (PSNR: 28.67)</p>
-          </div>
-
-          <div class="content has-text-centered">
-            <video class="video-fluid w-100" controls autoplay loop muted>
-              <source src="static/videos/NeRF/llff_trex.mp4" type="video/mp4" />
-            </video>
-            <p>Scene: T-Rex (LLFF). Left: NeRF (PSNR: 28.10), Right: Ours (PSNR: 28.12)</p>
-          </div>
-
-          <div class="content has-text-centered">
-            <video class="video-fluid w-100" controls autoplay loop muted>
-              <source src="static/videos/NeRF/llff_horns.mp4" type="video/mp4" />
-            </video>
-            <p>Scene: Horns (LLFF). Left: NeRF (PSNR: 28.86), Right: Ours (PSNR: 28.95)</p>
-          </div>
-
 
         </div>
       </div>
     </div>
   </section>
-
-<!--  <section class="section" id="BibTeX">-->
-<!--    <div class="container is-max-desktop content">-->
-<!--      <h2 class="title">BibTeX</h2>-->
-<!--      <pre><code>@inproceedings{wang2022r2l,-->
-<!--  title={R2L: Distilling Neural Radiance Field to Neural Light Field for Efficient Novel View Synthesis},-->
-<!--  author={Wang, Huan and Ren, Jian and Huang, Zeng and Olszewski, Kyle and Chai, Menglei and Fu, Yun and Tulyakov, Sergey},-->
-<!--  booktitle={European Conference on Computer Vision},-->
-<!--  year={2022}</code></pre>-->
-<!--    </div>-->
-<!--  </section>-->
-
 
   <footer class="footer">
     <div align="center" class="container">
