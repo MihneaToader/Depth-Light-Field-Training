@@ -287,6 +287,7 @@ def render_path(render_poses,
             else:  # For R2L model
                 model = render_kwargs['network_fn']
                 perturb = render_kwargs['perturb']
+                offsets = torch.zeros((H * W, 1))
 
                 # Network forward
                 with torch.no_grad():
@@ -299,7 +300,7 @@ def render_path(render_poses,
                             pts = point_sampler.sample_test_plucker(
                                 c2w[:3, :4])
                         else:
-                            pts = point_sampler.sample_test(
+                            pts, offsets = point_sampler.sample_test(
                                 c2w[:3, :4])  # [H*W, n_sample*3]
                     model_input = positional_embedder(pts)
                     torch.cuda.synchronize()
@@ -308,7 +309,7 @@ def render_path(render_poses,
                         rgbd = model(model_input)
                         rgb = rgbd[:, :3]
                     else:
-                        rgb = model(model_input)
+                         rgb = model(model_input)
                     torch.cuda.synchronize()
                     t_forward = time.time()
                     print(
@@ -322,8 +323,21 @@ def render_path(render_poses,
                 if args.dataset_type == 'llff':
                     H_, W_ = H, W  # non-square images
                 elif args.dataset_type == 'blender':
-                    H_ = W_ = int(math.sqrt(rgb.numel() / 3))
-                rgb = rgb.view(H_, W_, 3)
+                    if args.train_depth:
+                        H_ = W_ = int(math.sqrt(rgb.numel()))
+                    else:
+                        H_ = W_ = int(math.sqrt(rgb.numel() / 3))
+                print(H_, W_)
+
+                if args.train_depth:
+                    rgb = rgb.view(H_, W_, 1)
+                    offsets = offsets.view(H_, W_, 1).to("cuda:0")
+                    rgb = 1/(1/rgb + offsets)
+                    rgb *= args.scaling_factor
+                    rgb = rgb.expand(H_, W_, 3)
+                else:
+                    rgb = rgb.view(H_, W_, 3)
+
                 disp = rgb  # Placeholder, to maintain compability
 
             rgbs.append(rgb)
@@ -376,8 +390,8 @@ def render_path(render_poses,
         monitor_resolution_x = 3840
         pixels_per_degree = monitor_distance * (monitor_resolution_x /
                                                 monitor_width) * (np.pi / 180)
-        flips = flip.compute_flip(rec, ref,
-                                  pixels_per_degree)  # shape [N, 1, H, W]
+        # flips = flip.compute_flip(rec, ref,
+        #                           pixels_per_degree)  # shape [N, 1, H, W]
         # --
 
         errors = torch.stack(errors, dim=0)
@@ -391,7 +405,7 @@ def render_path(render_poses,
         misc['test_psnr_v2'] = psnrs.mean()
         misc['test_ssim'] = ssims.mean()
         misc['test_lpips'] = lpipses.mean()
-        misc['test_flip'] = flips.mean()
+        # misc['test_flip'] = flips.mean()
         misc['errors'] = errors
 
     render_kwargs['network_fn'].train()
@@ -459,6 +473,12 @@ def create_nerf(args, near, far):
         else:
             input_dim = args.n_sample_per_ray * 3 * positional_embedder.embed_dim
         model = NeRF_v3_2(args, input_dim, 3).to(device)
+        if not args.freeze_pretrained:
+            grad_vars += list(model.parameters())
+
+    elif args.model_name in ['DeLFT']:
+        input_dim = args.n_sample_per_ray * 3 * positional_embedder.embed_dim
+        model = NeRF_v3_2(args, input_dim, 1).to(device)
         if not args.freeze_pretrained:
             grad_vars += list(model.parameters())
 
@@ -544,7 +564,7 @@ def create_nerf(args, near, far):
         n_flops = get_n_flops_(model, input=dummy_input, count_adds=False) * (
             args.N_samples + args.N_samples + args.N_importance)
 
-    elif args.model_name in ['nerf_v3.2', 'R2L']:
+    elif args.model_name in ['nerf_v3.2', 'R2L', 'DeLFT']:
         dummy_input = torch.randn(1, model.input_dim).to(device)
         n_flops = get_n_flops_(model, input=dummy_input, count_adds=False)
 
@@ -794,18 +814,32 @@ def get_dataloader(dataset_type, datadir, pseudo_ratio=0.5):
                 pin_memory=True,
                 sampler=InfiniteSamplerWrapper(len(trainset)))
         elif args.data_mode in ['rays']:
-            trainset = BlenderDataset_v2(
-                datadir,
-                dim_dir=3,
-                dim_rgb=3,
-                hold_ratio=args.pseudo_data_hold_ratio,
-                pseudo_ratio=args.pseudo_ratio)
-            trainloader = torch.utils.data.DataLoader(
-                dataset=trainset,
-                batch_size=args.N_rand,
-                num_workers=args.num_workers,
-                pin_memory=True,
-                sampler=InfiniteSamplerWrapper(len(trainset)))
+            if args.model_name in ['DeLFT']:
+                trainset = BlenderDataset_v2(
+                    datadir,
+                    dim_dir=3,
+                    dim_rgb=1,
+                    hold_ratio=args.pseudo_data_hold_ratio,
+                    pseudo_ratio=args.pseudo_ratio)
+                trainloader = torch.utils.data.DataLoader(
+                    dataset=trainset,
+                    batch_size=args.N_rand,
+                    num_workers=args.num_workers,
+                    pin_memory=True,
+                    sampler=InfiniteSamplerWrapper(len(trainset)))
+            else:
+                trainset = BlenderDataset_v2(
+                    datadir,
+                    dim_dir=3,
+                    dim_rgb=3,
+                    hold_ratio=args.pseudo_data_hold_ratio,
+                    pseudo_ratio=args.pseudo_ratio)
+                trainloader = torch.utils.data.DataLoader(
+                    dataset=trainset,
+                    batch_size=args.N_rand,
+                    num_workers=args.num_workers,
+                    pin_memory=True,
+                    sampler=InfiniteSamplerWrapper(len(trainset)))
     return iter(trainloader), len(trainset)
 
 
@@ -921,8 +955,12 @@ def train():
         print('NEAR FAR', near, far)
 
     elif args.dataset_type == 'blender':
-        images, poses, render_poses, hwf, i_split = load_blender_data(
-            args.datadir, args.half_res, args.testskip)
+        if args.train_depth:
+            images, poses, render_poses, hwf, i_split = load_blender_data(
+                args.datadir, args.half_res, args.testskip, depth=True)
+        else:
+            images, poses, render_poses, hwf, i_split = load_blender_data(
+                args.datadir, args.half_res, args.testskip)
         print('Loaded blender', images.shape, poses.shape, render_poses.shape,
               hwf, args.datadir)
         # Loaded blender (138, 400, 400, 4) (138, 4, 4) torch.Size([40, 4, 4]) [400, 400, 555.5555155968841] ./data/nerf_synthetic/lego
@@ -1004,6 +1042,10 @@ def train():
     # Get train, test, video poses and images
     train_images, train_poses = images[i_train], poses[i_train]
     test_poses, test_images = poses[i_test], images[i_test]
+    if args.train_depth:
+        test_images[test_images == 1] = 0
+        if args.does_terminate:
+            test_images[test_images != 0] = 1
     n_original_img = len(train_images)
     if args.dataset_type == 'blender':
         # @mst: for blender dataset, get more diverse video poses
@@ -1078,7 +1120,7 @@ def train():
                                              savedir=logger.gen_img_path,
                                              render_factor=args.render_factor)
                 print(
-                    f"[TEST] TestPSNR {misc['test_psnr'].item():.4f} TestPSNRv2 {misc['test_psnr_v2'].item():.4f} TestSSIM {misc['test_ssim'].item():.4f} TestLPIPS {misc['test_lpips'].item():.4f} TestFLIP {misc['test_flip'].item():.4f}"
+                    f"[TEST] TestMSE {misc['test_loss'].item():.4f} TestPSNR {misc['test_psnr'].item():.4f} TestPSNRv2 {misc['test_psnr_v2'].item():.4f} TestSSIM {misc['test_ssim'].item():.4f} TestLPIPS {misc['test_lpips'].item():.4f}"
                 )
             else:
                 if args.dataset_type == 'blender':
@@ -1110,7 +1152,7 @@ def train():
         else:
             onnx_path = f'{logger.weights_path}/ckpt.onnx'
         mobile_H, mobile_W = 256, 256
-        if args.model_name in ['nerf_v3.2', 'R2L']:
+        if args.model_name in ['nerf_v3.2', 'R2L', 'DeLFT']:
             dummy_input = torch.randn(
                 1, mobile_H, mobile_W,
                 render_kwargs_test['network_fn'].input_dim).to(device)
@@ -1309,20 +1351,32 @@ def train():
                         device), target_s.to(device)
                     rays_o = rays_o.view(-1, 3)  # [N_rand*4096, 3]
                     rays_d = rays_d.view(-1, 3)  # [N_rand*4096, 3]
-                    target_s = target_s.view(-1, 3)  # [N_rand*4096, 3]
+                    if args.train_depth:
+                        target_s = target_s.view(-1, 1)  # [N_rand*4096, 1]
+                    else:
+                        target_s = target_s.view(-1, 3)  # [N_rand*4096, 3]
 
                     if args.shuffle_input:
                         rays_d = rays_d.view(rays_d.shape[0], 3 // 3,
                                              3)  # [N_rand*4096, 3//3, 3]
-                        target_s = target_s.view(target_s.shape[0], 3 // 3,
-                                                 3)  # [N_rand*4096, 3//3, 3]
+                        if args.train_depth:
+                            target_s = target_s.view(target_s.shape[0], 1 // 1,
+                                                     1)  # [N_rand*4096, 1//1, 1]
+                        else:
+                            target_s = target_s.view(target_s.shape[0], 3 // 3,
+                                                     3)  # [N_rand*4096, 3//3, 3]
+
                         shuffle_input_randix = torch.randperm(3 // 3)
                         rays_d = rays_d[:, shuffle_input_randix, :]
                         target_s = target_s[:, shuffle_input_randix, :]
                         rays_d = rays_d.view(-1, 3)  # [N_rand*4096, 3]
-                        target_s = target_s.view(-1, 3)  # [N_rand*4096, 3]
+                        if args.train_depth:
+                            target_s = target_s.view(-1, 1)  # [N_rand*4096, 1]
+                        else:
+                            target_s = target_s.view(-1, 3)  # [N_rand*4096, 3]
 
             batch_size = rays_o.shape[0]
+            print(f"Batch size: {batch_size}")
             if args.hard_ratio:
                 if isinstance(args.hard_ratio, list):
                     n_hard_in = int(
@@ -1373,12 +1427,29 @@ def train():
                                                  rays_d,
                                                  perturb=perturb)
             rgb = model(positional_embedder(pts))
+        elif args.model_name in ['DeLFT']:
+            model = render_kwargs_train['network_fn']
+            perturb = render_kwargs_train['perturb']
+            if args.plucker:
+                pts = point_sampler.sample_train_plucker(rays_o, rays_d)
+            else:
+                pts = point_sampler.sample_train(rays_o,
+                                                 rays_d,
+                                                 perturb=perturb)
+            depth = model(positional_embedder(pts))
 
-        # rgb loss
-        loss_rgb = img2mse(rgb[:, :3], target_s[:, :3]) * args.lw_rgb
-        psnr = mse2psnr(loss_rgb)
-        loss_line.update('psnr', psnr.item(), '.4f')
-        loss += loss_rgb
+        if args.train_depth:
+            # depth loss
+            loss_depth = img2mse(depth[:, :1], target_s[:, :1]) * args.lw_rgb
+            psnr = mse2psnr(loss_depth)
+            loss_line.update('psnr', psnr.item(), '.4f')
+            loss += loss_depth
+        else:
+            # rgb loss
+            loss_rgb = img2mse(rgb[:, :3], target_s[:, :3]) * args.lw_rgb
+            psnr = mse2psnr(loss_rgb)
+            loss_line.update('psnr', psnr.item(), '.4f')
+            loss += loss_rgb
 
         # smoothing for log print
         if not math.isinf(psnr.item()):
@@ -1409,21 +1480,38 @@ def train():
 
         # collect hard examples
         if args.hard_ratio:
-            _, indices = torch.sort(
-                torch.mean((rgb[:batch_size] - target_s[:batch_size])**2,
-                           dim=1))
-            hard_indices = indices[-n_hard_in:]
-            hard_rays_ = torch.cat([
-                rays_o[hard_indices], rays_d[hard_indices],
-                target_s[hard_indices]
-            ],
-                                   dim=-1)
-            if hard_pool_full:
-                hard_rays[rand_ix_out[:n_hard_in]] = hard_rays_  # replace
+            if args.train_depth:
+                _, indices = torch.sort(
+                    torch.mean((depth[:batch_size] - target_s[:batch_size]) ** 2,
+                               dim=1))
+                hard_indices = indices[-n_hard_in:]
+                hard_rays_ = torch.cat([
+                    rays_o[hard_indices], rays_d[hard_indices],
+                    target_s[hard_indices]
+                ],
+                    dim=-1)
+                if hard_pool_full:
+                    hard_rays[rand_ix_out[:n_hard_in]] = hard_rays_  # replace
+                else:
+                    hard_rays = torch.cat([hard_rays, hard_rays_], dim=0)  # append
+                    if hard_rays.shape[0] >= batch_size * args.hard_mul:
+                        hard_pool_full = True
             else:
-                hard_rays = torch.cat([hard_rays, hard_rays_], dim=0)  # append
-                if hard_rays.shape[0] >= batch_size * args.hard_mul:
-                    hard_pool_full = True
+                _, indices = torch.sort(
+                    torch.mean((rgb[:batch_size] - target_s[:batch_size])**2,
+                               dim=1))
+                hard_indices = indices[-n_hard_in:]
+                hard_rays_ = torch.cat([
+                    rays_o[hard_indices], rays_d[hard_indices],
+                    target_s[hard_indices]
+                ],
+                                       dim=-1)
+                if hard_pool_full:
+                    hard_rays[rand_ix_out[:n_hard_in]] = hard_rays_  # replace
+                else:
+                    hard_rays = torch.cat([hard_rays, hard_rays_], dim=0)  # append
+                    if hard_rays.shape[0] >= batch_size * args.hard_mul:
+                        hard_pool_full = True
 
         # print logs of training
         if i % args.i_print == 0:
@@ -1532,7 +1620,7 @@ def save_ckpt(file_name, render_kwargs_train, optimizer, best_psnr,
     if args.model_name in ['nerf'] and args.N_importance > 0:
         to_save['network_fine_state_dict'] = undataparallel(
             render_kwargs_train['network_fine'].state_dict())
-    if args.model_name in ['nerf_v3.2', 'R2L']:
+    if args.model_name in ['nerf_v3.2', 'R2L', 'DeLFT']:
         to_save['network_fn'] = undataparallel(
             render_kwargs_train['network_fn'])
     torch.save(to_save, path)

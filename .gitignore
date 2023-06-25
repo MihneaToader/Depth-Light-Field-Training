@@ -12,6 +12,7 @@ base_models
 model/*.th
 train_params/
 data/
+Results/
 tiny_nerf_data.npz
 *.npy
 *.pdf
@@ -21,3 +22,5 @@ tools/.ipynb_checkpoints
 log_learning_curve_test.jpg
 *.DS_Store*
 .vscode
+NeRF_Blender_Models/
+R2L_Blender_Models/
